@@ -517,7 +517,7 @@ if st.session_state.form_active:
                     st.error(error)
                 st.stop()
             
-            # Construir datos para el QR
+            # Construir datos para el QR (SIN METADATA ADICIONAL)
             data = {
                 "plate": plate.strip().upper(),
                 "driverName": driver.strip().title(),
@@ -534,10 +534,6 @@ if st.session_state.form_active:
             if delivery_ref.strip():
                 data["deliveryOrderRef"] = delivery_ref.strip().upper()
             
-            # Agregar metadata para Boomi
-            data["generated_timestamp"] = datetime.now().strftime(generator.BOOMI_CONFIG['date_format'])
-            data["total_items"] = len(item_list)
-            data["total_quantity"] = sum(item["quantity"] for item in item_list)
             
             # Generar QR
             generate_qr_and_update_state(data)
@@ -555,7 +551,7 @@ else:
     if st.session_state.json_str:
         data = json.loads(st.session_state.json_str)
         
-        # Mostrar resumen
+        # Mostrar resumen (calculado desde los datos existentes)
         st.markdown("### Summary:")
         col1, col2 = st.columns(2)
         with col1:
@@ -563,9 +559,14 @@ else:
             st.write(f"**Driver:** {data.get('driverName', 'N/A')}")
             st.write(f"**Customer ID:** {data.get('customer_id', 'N/A')}")
         with col2:
-            st.write(f"**Total Items:** {data.get('total_items', 'N/A')}")
-            st.write(f"**Total Quantity:** {data.get('total_quantity', 'N/A')}")
-            st.write(f"**Generated:** {data.get('generated_timestamp', 'N/A')}")
+            # Calcular totales desde item_list
+            item_list = data.get('item_list', [])
+            total_items = len(item_list)
+            total_quantity = sum(item.get('quantity', 0) for item in item_list)
+            
+            st.write(f"**Total Items:** {total_items}")
+            st.write(f"**Total Quantity:** {total_quantity}")
+            st.write(f"**Date/Time:** {data.get('date_time_at_gate', 'N/A')}")
     
     # Mostrar JSON completo
     with st.expander("📋 QR Content (JSON)", expanded=False):
